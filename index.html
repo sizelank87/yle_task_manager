@@ -35,14 +35,14 @@
       transform: translateX(-20px);
     }
 
-    .calendar-side {
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      position: fixed;
-      left: 65px;
-      top: 200px;
-      width: 220px;
-      z-index: 500;
-    }
+.calendar-side {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  position: fixed;
+  left: calc(50% - 560px);
+  top: 42px;
+  width: 220px;
+  z-index: 500;
+}
 
     .display {
       width: var(--closed-width);
@@ -626,11 +626,11 @@
         padding: 24px;
       }
 
-      .calendar-side {
-        position: static;
-        width: 220px;
-        margin: 0 0 14px 0;
-      }
+ .calendar-side {
+  position: static;
+  width: 220px;
+  margin: 0 auto 18px auto;
+}
 
       .editor,
       .detail-panel { width: min(420px, 100%); }
