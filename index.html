@@ -725,6 +725,26 @@
 .logout-btn.hide {
   display: none;
 }
+    .mobile-sort-row {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .mobile-sort-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .mobile-sort-row button {
+    background: #334155;
+    color: #e2e8f0;
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+}
 .detail-close-btn:hover {
   background: #475569;
 }
@@ -774,6 +794,10 @@
 
       <div class="card">
         <h2>주요 업무</h2>
+        <div class="mobile-sort-row">
+  <button onclick="setSort('startDate')">시작일 정렬</button>
+  <button onclick="setSort('endDate')">마감일 정렬</button>
+</div>
         <div class="task-header">
           <div>타이틀</div>
           <div>상태 / 중요도</div>
