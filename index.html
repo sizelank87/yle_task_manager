@@ -963,17 +963,18 @@
       }
     }
 
-    function getData() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        const draft = localStorage.getItem(DRAFT_KEY);
-        const raw = draft || saved;
-        return raw ? JSON.parse(raw) : defaultData;
-      } catch (e) {
-        console.warn('저장 데이터 읽기 실패', e);
-        return defaultData;
-      }
-    }
+function getData() {
+  try {
+    const session = sessionStorage.getItem(STORAGE_KEY);
+    const draft = localStorage.getItem(DRAFT_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const raw = session || draft || saved;
+    return raw ? JSON.parse(raw) : defaultData;
+  } catch (e) {
+    console.warn('저장 데이터 읽기 실패', e);
+    return defaultData;
+  }
+}
 
     function normalizeTasks(tasks = []) {
       const normalized = [];
@@ -1076,15 +1077,29 @@
       };
     }
 
-    function buildCurrentDataFromForm() {
-      const top = getCurrentTopFields();
-      const tasks = getCurrentFormTasks();
-      while (tasks.length < TASK_COUNT) {
-        tasks.push({ title: '', startDate: '', endDate: '', owner: '', priority: '보통', description: '' });
-      }
-      return { ...top, tasks };
-    }
+function buildCurrentDataFromForm() {
+  const top = getCurrentTopFields();
+  const existingTasks = normalizeTasks(getData().tasks);
+  const tasks = getCurrentFormTasks();
 
+  for (let i = 0; i < tasks.length; i++) {
+    tasks[i].done = existingTasks[i]?.done || false;
+  }
+
+  while (tasks.length < TASK_COUNT) {
+    tasks.push({
+      title: '',
+      startDate: '',
+      endDate: '',
+      owner: '',
+      priority: '보통',
+      description: '',
+      done: existingTasks[tasks.length]?.done || false
+    });
+  }
+
+  return { ...top, tasks };
+}
 function autoSaveCurrentState() {
   const data = buildCurrentDataFromForm();
 
@@ -1379,14 +1394,13 @@ async function saveNow() {
     }, 2000);
   }
 }
-  function toggleTaskDone(originalIndex) {
+function toggleTaskDone(originalIndex) {
   const data = buildCurrentDataFromForm();
   const task = data.tasks[originalIndex - 1];
 
   if (!task) return;
 
   task.done = !task.done;
-    persistState(data);
 
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
