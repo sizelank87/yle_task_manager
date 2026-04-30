@@ -669,12 +669,6 @@
           <div class="title" id="boardTitle">업무현황표</div>
           <div class="clock" id="clock">--:-- --</div>
           <div class="today-date" id="todayDate">----년 --월 --일 ---요일</div>
-          <div class="export-area">
-            <button id="exportBtn" onclick="exportHtmlFile()" class="export-btn">
-              <span id="exportLabel">현 업무현황표 저장하기</span>
-            </button>
-            <div class="save-warning">(업무 업데이트 후 반드시 저장하기)</div>
-          </div>
         </div>
       </div>
 
@@ -1283,50 +1277,6 @@ async function loadFromSupabase() {
       toggleEditor();
     }
 
-    async function exportHtmlFile() {
-      const data = buildCurrentDataFromForm();
-      persistState(data);
-
-      const fileName = ((data.title || getFileNameTitle()).replace(/[\\/:*?"<>|]/g, '').trim() || '업무현황표') + '.html';
-      const meta = { formCount, savedAt: Date.now() };
-
-      let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-      html = html.replace(
-        '</head>',
-        `<script>window.__EXPORTED_DATA__ = ${JSON.stringify(data)}; window.__EXPORTED_META__ = ${JSON.stringify(meta)};<\/script></head>`
-      );
-
-      try {
-        if ('showSaveFilePicker' in window) {
-          const handle = await window.showSaveFilePicker({
-            suggestedName: fileName,
-            types: [
-              {
-                description: 'HTML File',
-                accept: { 'text/html': ['.html'] }
-              }
-            ]
-          });
-          const writable = await handle.createWritable();
-          await writable.write(html);
-          await writable.close();
-          return;
-        }
-      } catch (e) {
-        if (e && e.name === 'AbortError') return;
-        console.warn('파일 저장 창 사용 실패, 다운로드 방식으로 전환합니다.', e);
-      }
-
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
 
     function toggleEditor() {
       const editor = document.getElementById('editorPanel');
@@ -1415,10 +1365,7 @@ async function loadFromSupabase() {
       document.getElementById('clock').textContent = time;
       document.getElementById('todayDate').textContent = todayText;
 
-      const exportLabel = document.getElementById('exportLabel');
-      if (exportLabel) {
-        exportLabel.textContent = '현 업무현황표 저장하기';
-      }
+      
 
       renderCalendar();
     }
