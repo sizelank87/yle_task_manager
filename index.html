@@ -667,7 +667,13 @@
   min-height: 16px;
   font-weight: 700;
 }
-    
+ .save-warning-text {
+  font-size: 12px;
+  color: #fca5a5;
+  font-weight: 700;
+  text-align: center;
+  margin-top: -2px;
+}   
   </style>
 </head>
 <body>
@@ -705,6 +711,9 @@
           <div class="clock" id="clock">--:-- --</div>
           <div class="today-date" id="todayDate">----년 --월 --일 ---요일</div>
           <button class="main-save-btn" onclick="saveNow()">저장</button>
+          <div class="save-warning-text">
+  저장하지 않은 변경사항은 페이지 이동 또는 새로고침 시 반영되지 않을 수 있습니다.
+</div>
           <div class="save-status" id="saveStatus"></div>
         </div>
       </div>
@@ -1049,12 +1058,21 @@
       return { ...top, tasks };
     }
 
-    function autoSaveCurrentState() {
-      const data = buildCurrentDataFromForm();
-      persistState(data);
-      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
-      renderBoard(data);
-    }
+function autoSaveCurrentState() {
+  const data = buildCurrentDataFromForm();
+
+  // 화면만 업데이트하고 서버에는 저장하지 않음
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {}
+
+  renderBoard(data);
+
+  const status = document.getElementById('saveStatus');
+  if (status) {
+    status.textContent = '저장되지 않은 변경사항 있음';
+  }
+}
 
     function bindAutoSaveEvents() {
       const selectors = [
@@ -1419,13 +1437,7 @@ async function saveNow() {
       clockTimer = setInterval(updateClock, 1000);
 
       document.getElementById('editorPanel').addEventListener('scroll', updateQuickSaveVisibility);
-      window.addEventListener('resize', updateQuickSaveVisibility);
-      window.addEventListener('beforeunload', autoSaveCurrentState);
-      window.addEventListener('pagehide', autoSaveCurrentState);
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') autoSaveCurrentState();
-      });
-      window.addEventListener('blur', autoSaveCurrentState);
+     
     }
 
     document.addEventListener('click', (e) => {
