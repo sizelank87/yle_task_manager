@@ -712,30 +712,20 @@
   opacity: 0.65;
 }
     .detail-close-btn {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-
+.detail-close-btn {
+  width: 100%;
+  margin-top: 16px;
+  border-radius: 12px;
   background: #334155;
   color: #e2e8f0;
-
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
   cursor: pointer;
   border: none;
-
-  box-shadow: 0 6px 14px rgba(0,0,0,0.3);
 }
-
+.logout-btn.hide {
+  display: none;
+}
 .detail-close-btn:hover {
   background: #475569;
 }
@@ -805,7 +795,7 @@
     </div>
 
     <aside class="detail-panel" id="detailPanel">
-      <button class="detail-close-btn" onclick="closeDetailPanel()">✕</button>
+
       <div class="detail-title" id="detailTitle">업무 내용을 선택하세요</div>
       <div class="detail-meta">
         <div class="detail-meta-item"><strong>상태:</strong> <span id="detailStatus">-</span></div>
@@ -815,6 +805,7 @@
         <div class="detail-meta-item"><strong>담당자:</strong> <span id="detailOwner">-</span></div>
       </div>
       <div class="detail-description" id="detailDescription"><span class="detail-empty">업무 내용이 없습니다.</span></div>
+      <button class="detail-close-btn" onclick="closeDetailPanel()">닫기</button>
     </aside>
 
     <aside class="editor" id="editorPanel">
@@ -1365,17 +1356,21 @@ function autoSaveCurrentState() {
       refreshDetailPanel(data);
     }
 
-    function openTaskDetail(originalIndex) {
-      const app = document.querySelector('.app');
-      if (app.classList.contains('editor-open')) return;
-      selectedTaskId = originalIndex;
-      refreshDetailPanel(getData());
-      document.getElementById('detailPanel').classList.add('open');
-    }
+   function openTaskDetail(originalIndex) {
+  const app = document.querySelector('.app');
+  if (app.classList.contains('editor-open')) return;
+  selectedTaskId = originalIndex;
+  refreshDetailPanel(getData());
+  document.getElementById('detailPanel').classList.add('open');
+  document.querySelector('.logout-btn')?.classList.add('hide');
+}
+  function closeDetailPanel() {
+  document.getElementById('detailPanel').classList.remove('open');
 
-    function closeDetailPanel() {
-      document.getElementById('detailPanel').classList.remove('open');
-    }
+  if (!document.getElementById('editorPanel').classList.contains('open')) {
+    document.querySelector('.logout-btn')?.classList.remove('hide');
+  }
+}
 
     function updateQuickSaveVisibility() {
       const editor = document.getElementById('editorPanel');
@@ -1475,14 +1470,7 @@ function toggleTaskDone(originalIndex) {
     status.textContent = '저장되지 않은 변경사항 있음';
   }
 }
-    function toggleEditor() {
-      const editor = document.getElementById('editorPanel');
-      const app = document.querySelector('.app');
-      const isOpen = editor.classList.toggle('open');
-      app.classList.toggle('editor-open', isOpen);
-      if (isOpen) closeDetailPanel();
-      updateQuickSaveVisibility();
-    }
+function toggleEditor() {
 
     function changeMonth(delta) {
       calendarOffset += delta;
