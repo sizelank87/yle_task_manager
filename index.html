@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>업무현황표</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    .app {
+      min-height: 100vh;
+      position: relative;
+      overflow-x: visible;
+    }
+
+    :root {
+      --editor-width: 420px;
+      --closed-width: 60%;
+    }
+
+    .app.editor-open .display {
+      transform: translateX(-210px);
+    }
+
+    .app.editor-open .calendar-side {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-20px);
+    }
+
+    .calendar-side {
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      position: fixed;
+      left: 65px;
+      top: 200px;
+      width: 220px;
+      z-index: 500;
+    }
+
+    .display {
+      width: var(--closed-width);
+      margin: 24px auto;
+      padding: 36px;
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      border-radius: 28px;
+      transition: transform 0.3s ease, width 0.3s ease, margin 0.3s ease;
+    }
+
+    .datetime-panel {
+      width: 220px;
+      min-width: 220px;
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 12px 12px 14px 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .calendar-nav {
+      display: grid;
+      grid-template-columns: 20px 1fr 20px;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .calendar-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #f8fafc;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .calendar-nav button {
+      background: transparent;
+      color: #cbd5e1;
+      padding: 0;
+      border-radius: 0;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .calendar-day-name,
+    .calendar-date {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      border-radius: 7px;
+    }
+
+    .calendar-day-name {
+      color: #94a3b8;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .calendar-day-name.sun,
+    .calendar-date.sun {
+      color: #f87171;
+    }
+
+    .calendar-day-name.sat,
+    .calendar-date.sat {
+      color: #60a5fa;
+    }
+
+    .calendar-date {
+      background: #1e293b;
+      color: #cbd5e1;
+    }
+
+    .calendar-date.muted {
+      opacity: 0.25;
+    }
+
+    .calendar-date.today {
+      background: #2563eb;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 0 2px rgba(147,197,253,0.25);
+    }
+
+    .calendar-date.today.sun,
+    .calendar-date.today.sat {
+      color: #ffffff;
+    }
+
+    .calendar-today-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 4px;
+    }
+
+    .calendar-today-btn {
+      background: #334155;
+      color: #cbd5e1;
+      border: 1px solid #475569;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .clock {
+      font-size: 28px;
+      font-weight: 700;
+      color: #93c5fd;
+      white-space: nowrap;
+    }
+
+    .today-date {
+      font-size: 18px;
+      font-weight: 600;
+      color: #cbd5e1;
+      white-space: nowrap;
+    }
+
+    .export-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .export-btn {
+      background: linear-gradient(135deg, #facc15, #f59e0b);
+      color: #111827;
+      border: none;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .export-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.5);
+      background: linear-gradient(135deg, #eab308, #d97706);
+    }
+
+    .save-warning {
+      font-size: 12px;
+      color: #f87171;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .card h2 {
+      margin: 0 0 16px 0;
+      font-size: 24px;
+      color: #f8fafc;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 12px;
+    }
+
+    .task-header, .task-item {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1.15fr 1.15fr 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .task-header {
+      padding: 0 10px 10px 10px;
+      font-size: 15px;
+      color: #94a3b8;
+      font-weight: 700;
+    }
+
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .sortable:hover {
+      color: #e2e8f0;
+    }
+
+    .task-item {
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      background: #334155;
+      border-radius: 14px;
+      font-size: 20px;
+    }
+
+    .task-name {
+      font-weight: 700;
+      color: #f8fafc;
+      word-break: break-word;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: rgba(148, 163, 184, 0.45);
+      text-underline-offset: 4px;
+    }
+
+    .task-name:hover {
+      color: #93c5fd;
+    }
+
+    .app.editor-open .task-name {
+      cursor: default;
+      text-decoration: none;
+    }
+
+    .task-owner, .task-date {
+      font-size: 17px;
+      color: #cbd5e1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 90px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .badge-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .priority-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 72px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .priority-highest {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .priority-high {
+      background: rgba(251, 191, 36, 0.18);
+      color: #fde68a;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+
+    .priority-normal {
+      background: rgba(148, 163, 184, 0.18);
+      color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .planned { background: rgba(34,197,94,0.18); color: #4ade80; }
+    .in-progress { background: rgba(250,204,21,0.18); color: #fde047; }
+    .deadline-near { background: rgba(248,113,113,0.18); color: #fca5a5; }
+    .status-missing { background: rgba(249,115,22,0.18); color: #fdba74; border: 1px solid rgba(249,115,22,0.35); }
+
+    .notice {
+      margin-top: 14px;
+      background: #7c2d12;
+      border: 1px solid #ea580c;
+      color: #fff7ed;
+      font-size: 24px;
+      padding: 18px 20px;
+      border-radius: 16px;
+      font-weight: 700;
+      min-height: 64px;
+    }
+
+    .footer {
+      margin-top: 18px;
+      font-size: 18px;
+      color: #94a3b8;
+      min-height: 24px;
+    }
+
+    .fab-group {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 1100;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .edit-fab,
+    .quick-save-fab {
+      border-radius: 999px;
+      padding: 14px 18px;
+      font-weight: 700;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+      cursor: pointer;
+      user-select: none;
+      color: white;
+    }
+
+    .edit-fab { background: #2563eb; }
+    .quick-save-fab { background: #0ea5e9; display: none; }
+    .quick-save-fab.show { display: inline-flex; align-items: center; justify-content: center; }
+
+    .editor {
+      position: fixed;
+      right: 0;
+      top: 0;
+      height: 100vh;
+      width: var(--editor-width);
+      max-width: 100%;
+      padding: 24px;
+      background: #111827;
+      border-left: 1px solid #334155;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+    }
+
+    .editor.open { transform: translateX(0); }
+
+    .detail-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      height: 100vh;
+      width: 360px;
+      max-width: 100%;
+      padding: 24px;
+      background: #0f172a;
+      border-left: 1px solid #334155;
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      z-index: 900;
+    }
+
+    .detail-panel.open { transform: translateX(0); }
+
+    .detail-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 16px;
+      line-height: 1.35;
+    }
+
+    .detail-meta {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .detail-meta-item {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+
+    .detail-meta-item strong { color: #f8fafc; }
+
+    .detail-description {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 160px;
+    }
+
+    .detail-empty { color: #94a3b8; }
+
+    .editor h2 {
+      margin-top: 0;
+      font-size: 26px;
+      color: #f8fafc;
+    }
+
+    .editor p.help {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-top: -6px;
+      margin-bottom: 20px;
+    }
+
+    .section {
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #cbd5e1;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      border: 1px solid #475569;
+      border-radius: 10px;
+      background: #1e293b;
+      color: #f8fafc;
+      font-size: 14px;
+    }
+
+    textarea { min-height: 90px; resize: vertical; }
+    .task-form textarea { min-height: 72px; }
+
+    .task-form {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .task-form-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-bottom: 10px;
+    }
+
+    .date-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .date-preview {
+      margin-top: -2px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .date-preview.missing {
+      background: rgba(249,115,22,0.12);
+      border-color: rgba(249,115,22,0.35);
+      color: #fdba74;
+      font-weight: 700;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary { background: #2563eb; color: white; }
+    .secondary { background: #334155; color: white; }
+    .danger-btn { background: #b91c1c; color: white; }
+
+    .status-note {
+      font-size: 13px;
+      color: #93c5fd;
+      margin-top: 10px;
+    }
+
+    .task-add-button {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 12px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .task-action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 1350px) {
+      .display {
+        width: calc(100% - 48px);
+        margin: 20px auto;
+        padding: 24px;
+      }
+
+      .calendar-side {
+        position: static;
+        width: 220px;
+        margin: 0 0 14px 0;
+      }
+
+      .editor,
+      .detail-panel {
+        width: min(420px, 100%);
+      }
+
+      .app.editor-open .display {
+        transform: none;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .task-header { display: none; }
+      .task-item { grid-template-columns: 1fr; gap: 8px; }
+      .date-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="display">
+      <div class="calendar-side">
+        <div class="datetime-panel">
+          <div class="calendar-nav">
+            <button type="button" onclick="changeMonth(-1)">◀</button>
+            <div class="calendar-title" id="calendarTitle">----년 --월</div>
+            <button type="button" onclick="changeMonth(1)">▶</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="calendar-today-wrap">
+            <button type="button" class="calendar-today-btn" onclick="goToToday()">오늘로 가기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar">
+        <div class="title-block">
+          <div class="title" id="boardTitle">업무현황표</div>
+          <div class="clock" id="clock">--:-- --</div>
+          <div class="today-date" id="todayDate">----년 --월 --일 ---요일</div>
+          <div class="export-area">
+            <button id="exportBtn" onclick="exportHtmlFile()" class="export-btn">
+              <span id="exportLabel">현 업무현황표 저장하기</span>
+            </button>
+            <div class="save-warning">(업무 업데이트 후 반드시 저장하기)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>주요 업무</h2>
+        <div class="task-header">
+          <div>타이틀</div>
+          <div>상태 / 중요도</div>
+          <div class="sortable" onclick="setSort('startDate')">시작일 <span id="sort-startDate">↕</span></div>
+          <div class="sortable" onclick="setSort('endDate')">마감일 <span id="sort-endDate">↕</span></div>
+          <div>담당자</div>
+        </div>
+        <div id="taskList"></div>
+      </div>
+
+      <div class="notice" id="noticeBox"></div>
+      <div class="footer" id="footerText"></div>
+    </section>
+
+    <div class="fab-group">
+      <div class="quick-save-fab" id="quickSaveFab" onclick="saveAndClose()">변경 후 닫기</div>
+      <div class="edit-fab" onclick="toggleEditor()">편집</div>
+    </div>
+
+    <aside class="detail-panel" id="detailPanel">
+      <div class="detail-title" id="detailTitle">업무 내용을 선택하세요</div>
+      <div class="detail-meta">
+        <div class="detail-meta-item"><strong>상태:</strong> <span id="detailStatus">-</span></div>
+        <div class="detail-meta-item"><strong>중요도:</strong> <span id="detailPriority">-</span></div>
+        <div class="detail-meta-item"><strong>시작일:</strong> <span id="detailStartDate">-</span></div>
+        <div class="detail-meta-item"><strong>마감일:</strong> <span id="detailEndDate">-</span></div>
+        <div class="detail-meta-item"><strong>담당자:</strong> <span id="detailOwner">-</span></div>
+      </div>
+      <div class="detail-description" id="detailDescription"><span class="detail-empty">업무 내용이 없습니다.</span></div>
+    </aside>
+
+    <aside class="editor" id="editorPanel">
+      <div class="btn-row" id="editorTopActions" style="margin-bottom:20px;">
+        <button class="primary" onclick="saveAndClose()">변경 후 닫기</button>
+      </div>
+
+      <h2>상태창 편집</h2>
+      <p class="help">오른쪽에서 수정하고 저장하면 왼쪽 상태창이 바로 바뀝니다. 주요 업무는 최대 10개까지 입력할 수 있습니다.</p>
+
+      <div class="section">
+        <div class="section-title">기본 정보</div>
+        <label for="inputTitle">화면 제목</label>
+        <input id="inputTitle" type="text" />
+      </div>
+
+      <div class="section">
+        <div class="section-title">주요 업무 입력 (최대 10개)</div>
+        <div id="taskForms"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">공지와 하단 문구</div>
+        <label for="inputNotice">공지</label>
+        <textarea id="inputNotice"></textarea>
+        <label for="inputFooter">하단 문구</label>
+        <input id="inputFooter" type="text" />
+      </div>
+
+      <div class="status-note">상태는 자동 계산됩니다: 기간 미설정(오렌지), 예정중(초록), 진행 중(노랑), 마감임박(빨강). 중요도는 최우선 / 우선 / 보통으로 설정됩니다.</div>
+    </aside>
+  </div>
+
+  <script>
+    const TASK_COUNT = 10;
+    let formCount = 3;
+    let calendarOffset = 0;
+    let selectedTaskId = null;
+    let sortState = { key: 'startDate', direction: 'asc' };
+    const STORAGE_KEY = 'companyStatusBoardData';
+    const STORAGE_META_KEY = 'companyStatusBoardMeta';
+    const DRAFT_KEY = 'companyStatusBoardDraft';
+
+    function getFileNameTitle() {
+      const path = window.location.pathname;
+      const fileName = decodeURIComponent(path.split('/').pop() || '');
+      const titleWithoutExt = fileName.replace(/\.html?$/i, '');
+      return titleWithoutExt || '업무현황표';
+    }
+
+    const defaultData = {
+      title: getFileNameTitle(),
+      notice: '',
+      footer: '',
+      tasks: Array.from({ length: TASK_COUNT }, () => ({
+        title: '',
+        startDate: '',
+        endDate: '',
+        owner: '',
+        priority: '보통',
+        description: ''
+      }))
+    };
+
+    function formatPeriod(startDate, endDate) {
+      if (startDate && endDate) return `${startDate} ~ ${endDate}`;
+      if (startDate) return `${startDate} ~`;
+      if (endDate) return `~ ${endDate}`;
+      return '';
+    }
+
+    function persistState(data) {
+      try {
+        const payload = JSON.stringify(data);
+        localStorage.setItem(STORAGE_KEY, payload);
+        localStorage.setItem(DRAFT_KEY, payload);
+        localStorage.setItem(STORAGE_META_KEY, JSON.stringify({ formCount, savedAt: Date.now() }));
+      } catch (e) {
+        console.warn('저장 실패', e);
+      }
+    }
+
+    function restoreMeta() {
+      try {
+        if (window.__EXPORTED_META__ && typeof window.__EXPORTED_META__.formCount === 'number') {
+          formCount = Math.min(TASK_COUNT, Math.max(3, window.__EXPORTED_META__.formCount));
+          return;
+        }
+        const raw = localStorage.getItem(STORAGE_META_KEY);
+        if (!raw) return;
+        const meta = JSON.parse(raw);
+        if (typeof meta.formCount === 'number') {
+          formCount = Math.min(TASK_COUNT, Math.max(3, meta.formCount));
+        }
+      } catch (e) {
+        console.warn('복원 메타 읽기 실패', e);
+      }
+    }
+
+    function restoreSessionIfNeeded() {
+      try {
+        const hasLocal = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(DRAFT_KEY);
+        const sessionData = sessionStorage.getItem(STORAGE_KEY);
+        if (!hasLocal && sessionData) {
+          localStorage.setItem(STORAGE_KEY, sessionData);
+          localStorage.setItem(DRAFT_KEY, sessionData);
+        }
+      } catch (e) {
+        console.warn('세션 복원 실패', e);
+      }
+    }
+
+    function getData() {
+      try {
+        if (window.__EXPORTED_DATA__) return window.__EXPORTED_DATA__;
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const draft = localStorage.getItem(DRAFT_KEY);
+        const raw = draft || saved;
+        return raw ? JSON.parse(raw) : defaultData;
+      } catch (e) {
+        console.warn('저장 데이터 읽기 실패', e);
+        return defaultData;
+      }
+    }
+
+    function normalizeTasks(tasks = []) {
+      const normalized = [];
+      for (let i = 0; i < TASK_COUNT; i++) {
+        const task = tasks[i] || {};
+        normalized.push({
+          title: task.title || '',
+          startDate: task.startDate || '',
+          endDate: task.endDate || '',
+          owner: task.owner || '',
+          priority: task.priority || '보통',
+          description: task.description || '',
+          period: formatPeriod(task.startDate || '', task.endDate || '')
+        });
+      }
+      return normalized;
+    }
+
+    function createTaskForms() {
+      const container = document.getElementById('taskForms');
+      container.innerHTML = '';
+
+      for (let i = 1; i <= formCount; i++) {
+        const block = document.createElement('div');
+        block.className = 'task-form';
+        const showDelete = i >= 4;
+
+        block.innerHTML = `
+          <div class="task-form-title">업무 ${i}</div>
+          <label for="task${i}Title">타이틀</label>
+          <input id="task${i}Title" type="text" />
+
+          <label>기간</label>
+          <div class="date-row">
+            <div>
+              <label for="task${i}Start">시작일</label>
+              <input id="task${i}Start" type="date" onchange="updatePeriodPreview(${i})" />
+            </div>
+            <div>
+              <label for="task${i}End">마감일</label>
+              <input id="task${i}End" type="date" onchange="updatePeriodPreview(${i})" />
+            </div>
+          </div>
+          <div class="date-preview" id="task${i}PeriodPreview">기간 미설정</div>
+
+          <label for="task${i}Owner">담당자</label>
+          <input id="task${i}Owner" type="text" />
+
+          <label for="task${i}Priority">중요도</label>
+          <select id="task${i}Priority">
+            <option value="최우선">최우선</option>
+            <option value="우선">우선</option>
+            <option value="보통">보통</option>
+          </select>
+
+          <label for="task${i}Description">업무 내용</label>
+          <textarea id="task${i}Description" placeholder="없음"></textarea>
+
+          <div class="task-action-row">
+            <button type="button" class="danger-btn" onclick="resetTask(${i})">업무 ${i} 초기화</button>
+            ${showDelete ? `<button type="button" class="secondary" onclick="deleteTask(${i})">업무 ${i} 삭제</button>` : `<div></div>`}
+          </div>
+        `;
+        container.appendChild(block);
+      }
+
+      if (formCount < TASK_COUNT) {
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'task-add-button';
+        addBtn.textContent = '업무 추가';
+        addBtn.onclick = addTask;
+        container.appendChild(addBtn);
+      }
+
+      bindAutoSaveEvents();
+    }
+
+    function getCurrentFormTasks() {
+      const tasks = [];
+      for (let i = 1; i <= formCount; i++) {
+        tasks.push({
+          title: document.getElementById(`task${i}Title`)?.value || '',
+          startDate: document.getElementById(`task${i}Start`)?.value || '',
+          endDate: document.getElementById(`task${i}End`)?.value || '',
+          owner: document.getElementById(`task${i}Owner`)?.value || '',
+          priority: document.getElementById(`task${i}Priority`)?.value || '보통',
+          description: document.getElementById(`task${i}Description`)?.value || ''
+        });
+      }
+      return tasks;
+    }
+
+    function getCurrentTopFields() {
+      return {
+        title: document.getElementById('inputTitle')?.value || defaultData.title,
+        notice: document.getElementById('inputNotice')?.value || defaultData.notice,
+        footer: document.getElementById('inputFooter')?.value || defaultData.footer
+      };
+    }
+
+    function buildCurrentDataFromForm() {
+      const top = getCurrentTopFields();
+      const tasks = getCurrentFormTasks();
+      while (tasks.length < TASK_COUNT) {
+        tasks.push({
+          title: '',
+          startDate: '',
+          endDate: '',
+          owner: '',
+          priority: '보통',
+          description: ''
+        });
+      }
+      return { ...top, tasks };
+    }
+
+    function autoSaveCurrentState() {
+      const data = buildCurrentDataFromForm();
+      persistState(data);
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {}
+      renderBoard(data);
+    }
+
+    function bindAutoSaveEvents() {
+      const selectors = [
+        '#inputTitle', '#inputNotice', '#inputFooter',
+        '[id^="task"][id$="Title"]',
+        '[id^="task"][id$="Start"]',
+        '[id^="task"][id$="End"]',
+        '[id^="task"][id$="Owner"]',
+        '[id^="task"][id$="Priority"]',
+        '[id^="task"][id$="Description"]'
+      ];
+
+      selectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+          if (el.dataset.autosaveBound === 'true') return;
+          el.addEventListener('input', autoSaveCurrentState);
+          el.addEventListener('change', autoSaveCurrentState);
+          el.dataset.autosaveBound = 'true';
+        });
+      });
+    }
+
+    function populateFormsFromTasks(tasks) {
+      for (let i = 1; i <= formCount; i++) {
+        const task = tasks[i - 1] || {
+          title: '',
+          startDate: '',
+          endDate: '',
+          owner: '',
+          priority: '보통',
+          description: ''
+        };
+
+        document.getElementById(`task${i}Title`).value = task.title || '';
+        document.getElementById(`task${i}Start`).value = task.startDate || '';
+        document.getElementById(`task${i}End`).value = task.endDate || '';
+        document.getElementById(`task${i}Owner`).value = task.owner || '';
+        document.getElementById(`task${i}Priority`).value = task.priority || '보통';
+        document.getElementById(`task${i}Description`).value = task.description || '';
+        updatePeriodPreview(i);
+      }
+    }
+
+    function addTask() {
+      if (formCount < TASK_COUNT) {
+        formCount++;
+        createTaskForms();
+        loadToForm();
+        autoSaveCurrentState();
+      }
+    }
+
+    function deleteTask(index) {
+      if (index < 4) return;
+      const tasks = getCurrentFormTasks();
+      tasks.splice(index - 1, 1);
+      if (formCount > 3) formCount--;
+      createTaskForms();
+      populateFormsFromTasks(tasks);
+      autoSaveCurrentState();
+    }
+
+    function resetTask(index) {
+      document.getElementById(`task${index}Title`).value = '';
+      document.getElementById(`task${index}Start`).value = '';
+      document.getElementById(`task${index}End`).value = '';
+      document.getElementById(`task${index}Owner`).value = '';
+      document.getElementById(`task${index}Priority`).value = '보통';
+      document.getElementById(`task${index}Description`).value = '';
+      updatePeriodPreview(index);
+      autoSaveCurrentState();
+    }
+
+    function updatePeriodPreview(index) {
+      const start = document.getElementById(`task${index}Start`)?.value || '';
+      const end = document.getElementById(`task${index}End`)?.value || '';
+      const preview = document.getElementById(`task${index}PeriodPreview`);
+      if (!preview) return;
+      const text = formatPeriod(start, end) || '기간 미설정';
+      preview.textContent = text;
+      preview.classList.toggle('missing', !start && !end);
+    }
+
+    function parseLocalDate(dateStr) {
+      if (!dateStr) return null;
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+
+    function getAutoStatus(startDate, endDate) {
+      if (!startDate && !endDate) return '기간 미설정';
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const start = parseLocalDate(startDate);
+      const end = parseLocalDate(endDate);
+
+      if (start && today < start) return '예정중';
+
+      if (end) {
+        const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 2) return '마감임박';
+      }
+
+      return '진행 중';
+    }
+
+    function statusClass(status) {
+      if (status === '기간 미설정') return 'status-missing';
+      if (status === '예정중') return 'planned';
+      if (status === '마감임박') return 'deadline-near';
+      return 'in-progress';
+    }
+
+    function priorityClass(priority) {
+      if (priority === '최우선') return 'priority-highest';
+      if (priority === '우선') return 'priority-high';
+      return 'priority-normal';
+    }
+
+    function compareDateStrings(a, b) {
+      if (!a && !b) return 0;
+      if (!a) return 1;
+      if (!b) return -1;
+      return a.localeCompare(b);
+    }
+
+    function setSort(key) {
+      if (sortState.key === key) {
+        sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.key = key;
+        sortState.direction = 'asc';
+      }
+      renderBoard(getData());
+    }
+
+    function updateSortIndicators() {
+      const startEl = document.getElementById('sort-startDate');
+      const endEl = document.getElementById('sort-endDate');
+      if (!startEl || !endEl) return;
+      startEl.textContent = '↕';
+      endEl.textContent = '↕';
+      const target = document.getElementById(`sort-${sortState.key}`);
+      if (target) target.textContent = sortState.direction === 'asc' ? '↑' : '↓';
+    }
+
+    function refreshDetailPanel(data) {
+      const panel = document.getElementById('detailPanel');
+      if (!panel) return;
+
+      const tasks = normalizeTasks(data.tasks).map((task, index) => ({
+        ...task,
+        originalIndex: index + 1,
+        status: getAutoStatus(task.startDate, task.endDate)
+      }));
+
+      const selected = tasks.find(task => task.originalIndex === selectedTaskId && task.title.trim() !== '');
+
+      if (!selected) {
+        if (!document.querySelector('.app').classList.contains('editor-open')) {
+          panel.classList.remove('open');
+        }
+        document.getElementById('detailTitle').textContent = '업무 내용을 선택하세요';
+        document.getElementById('detailStatus').textContent = '-';
+        document.getElementById('detailPriority').textContent = '-';
+        document.getElementById('detailStartDate').textContent = '-';
+        document.getElementById('detailEndDate').textContent = '-';
+        document.getElementById('detailOwner').textContent = '-';
+        document.getElementById('detailDescription').innerHTML = '<span class="detail-empty">업무 내용이 없습니다.</span>';
+        return;
+      }
+
+      document.getElementById('detailTitle').textContent = selected.title;
+      document.getElementById('detailStatus').textContent = selected.status;
+      document.getElementById('detailPriority').textContent = selected.priority || '보통';
+      document.getElementById('detailStartDate').textContent = selected.startDate || '-';
+      document.getElementById('detailEndDate').textContent = selected.endDate || '-';
+      document.getElementById('detailOwner').textContent = selected.owner || '-';
+      document.getElementById('detailDescription').textContent = selected.description || '업무 내용이 없습니다.';
+    }
+
+    function renderBoard(data) {
+      document.getElementById('boardTitle').textContent = data.title;
+      document.title = data.title || getFileNameTitle();
+      document.getElementById('noticeBox').textContent = data.notice || '';
+      document.getElementById('footerText').textContent = data.footer || '';
+
+      const taskList = document.getElementById('taskList');
+      taskList.innerHTML = '';
+
+      const visibleTasks = normalizeTasks(data.tasks)
+        .map((task, index) => ({
+          ...task,
+          originalIndex: index + 1,
+          status: getAutoStatus(task.startDate, task.endDate)
+        }))
+        .filter(task => task.title.trim() !== '');
+
+      visibleTasks.sort((a, b) => {
+        let result = 0;
+        if (sortState.key === 'startDate') result = compareDateStrings(a.startDate, b.startDate);
+        if (sortState.key === 'endDate') result = compareDateStrings(a.endDate, b.endDate);
+        return sortState.direction === 'asc' ? result : result * -1;
+      });
+
+      updateSortIndicators();
+
+      visibleTasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = 'task-item';
+        div.innerHTML = `
+          <div class="task-name" onclick="event.stopPropagation(); openTaskDetail(${task.originalIndex})">${task.title}</div>
+          <div class="badge-group">
+            <span class="badge ${statusClass(task.status)}">${task.status}</span>
+            <span class="priority-badge ${priorityClass(task.priority)}">${task.priority || '보통'}</span>
+          </div>
+          <div class="task-date">${task.startDate || '-'}</div>
+          <div class="task-date">${task.endDate || '-'}</div>
+          <div class="task-owner">${task.owner || '-'}</div>
+        `;
+        taskList.appendChild(div);
+      });
+
+      refreshDetailPanel(data);
+    }
+
+    function openTaskDetail(originalIndex) {
+      const app = document.querySelector('.app');
+      if (app.classList.contains('editor-open')) return;
+      selectedTaskId = originalIndex;
+      refreshDetailPanel(getData());
+      document.getElementById('detailPanel').classList.add('open');
+    }
+
+    function closeDetailPanel() {
+      document.getElementById('detailPanel').classList.remove('open');
+    }
+
+    function updateQuickSaveVisibility() {
+      const editor = document.getElementById('editorPanel');
+      const topActions = document.getElementById('editorTopActions');
+      const quickSaveFab = document.getElementById('quickSaveFab');
+      if (!editor || !topActions || !quickSaveFab) return;
+
+      const editorOpen = editor.classList.contains('open');
+      if (!editorOpen) {
+        quickSaveFab.classList.remove('show');
+        return;
+      }
+
+      const rect = topActions.getBoundingClientRect();
+      const isVisible = rect.bottom > 0 && rect.top < window.innerHeight;
+      quickSaveFab.classList.toggle('show', !isVisible);
+    }
+
+    function loadToForm() {
+      const data = getData();
+      const tasks = normalizeTasks(data.tasks);
+
+      const filledCount = tasks.filter(task =>
+        task.title || task.startDate || task.endDate || task.owner || task.description
+      ).length;
+
+      const neededCount = Math.min(TASK_COUNT, Math.max(3, formCount, filledCount));
+      if (formCount !== neededCount) {
+        formCount = neededCount;
+        createTaskForms();
+      }
+
+      document.getElementById('inputTitle').value = data.title || '';
+      document.getElementById('inputNotice').value = data.notice || '';
+      document.getElementById('inputFooter').value = data.footer || '';
+      populateFormsFromTasks(tasks);
+      bindAutoSaveEvents();
+      renderBoard(data);
+    }
+
+    function saveAndClose() {
+      const data = buildCurrentDataFromForm();
+      persistState(data);
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {}
+      renderBoard(data);
+      toggleEditor();
+    }
+
+    async function exportHtmlFile() {
+      const data = buildCurrentDataFromForm();
+      persistState(data);
+
+      const fileName = ((data.title || getFileNameTitle()).replace(/[\\/:*?"<>|]/g, '').trim() || '업무현황표') + '.html';
+      const meta = { formCount, savedAt: Date.now() };
+
+      let html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      html = html.replace(
+        '</head>',
+        `<script>window.__EXPORTED_DATA__ = ${JSON.stringify(data)}; window.__EXPORTED_META__ = ${JSON.stringify(meta)};<\/script></head>`
+      );
+
+      try {
+        if ('showSaveFilePicker' in window) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [
+              {
+                description: 'HTML File',
+                accept: { 'text/html': ['.html'] }
+              }
+            ]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(html);
+          await writable.close();
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        console.warn('파일 저장 창 사용 실패, 다운로드 방식으로 전환합니다.', e);
+      }
+
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function toggleEditor() {
+      const editor = document.getElementById('editorPanel');
+      const app = document.querySelector('.app');
+      const isOpen = editor.classList.toggle('open');
+      app.classList.toggle('editor-open', isOpen);
+      if (isOpen) closeDetailPanel();
+      updateQuickSaveVisibility();
+    }
+
+    function changeMonth(delta) {
+      calendarOffset += delta;
+      renderCalendar();
+    }
+
+    function goToToday() {
+      calendarOffset = 0;
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const base = new Date();
+      const viewDate = new Date(base.getFullYear(), base.getMonth() + calendarOffset, 1);
+      const year = viewDate.getFullYear();
+      const month = viewDate.getMonth();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const firstDayRaw = new Date(year, month, 1).getDay();
+      const firstDay = (firstDayRaw + 6) % 7;
+      const lastDate = new Date(year, month + 1, 0).getDate();
+      document.getElementById('calendarTitle').textContent = `${year}년 ${month + 1}월`;
+
+      const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      dayNames.forEach((name, index) => {
+        const el = document.createElement('div');
+        el.className = 'calendar-day-name';
+        if (index === 5) el.classList.add('sat');
+        if (index === 6) el.classList.add('sun');
+        el.textContent = name;
+        grid.appendChild(el);
+      });
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-date muted';
+        empty.textContent = '';
+        grid.appendChild(empty);
+      }
+
+      for (let day = 1; day <= lastDate; day++) {
+        const el = document.createElement('div');
+        el.className = 'calendar-date';
+        const cellDate = new Date(year, month, day);
+        const weekday = cellDate.getDay();
+
+        if (weekday === 0) el.classList.add('sun');
+        if (weekday === 6) el.classList.add('sat');
+
+        if (
+          cellDate.getFullYear() === today.getFullYear() &&
+          cellDate.getMonth() === today.getMonth() &&
+          cellDate.getDate() === today.getDate()
+        ) {
+          el.classList.add('today');
+        }
+
+        el.textContent = day;
+        grid.appendChild(el);
+      }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const time = now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      const todayText = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${dayNames[now.getDay()]}요일`;
+      document.getElementById('clock').textContent = time;
+      document.getElementById('todayDate').textContent = todayText;
+
+      const exportLabel = document.getElementById('exportLabel');
+      if (exportLabel) {
+        exportLabel.textContent = '현 업무현황표 저장하기';
+      }
+
+      renderCalendar();
+    }
+
+    document.addEventListener('click', (e) => {
+      const panel = document.getElementById('detailPanel');
+      const app = document.querySelector('.app');
+      if (!panel || !panel.classList.contains('open')) return;
+      if (app.classList.contains('editor-open')) return;
+      if (!panel.contains(e.target)) closeDetailPanel();
+    });
+
+    document.getElementById('detailPanel').addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    document.title = getFileNameTitle();
+
+    restoreSessionIfNeeded();
+    restoreMeta();
+    createTaskForms();
+    loadToForm();
+    updateClock();
+    setInterval(updateClock, 1000);
+    document.getElementById('editorPanel').addEventListener('scroll', updateQuickSaveVisibility);
+    window.addEventListener('resize', updateQuickSaveVisibility);
+    window.addEventListener('beforeunload', autoSaveCurrentState);
+    window.addEventListener('pagehide', autoSaveCurrentState);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') autoSaveCurrentState();
+    });
+    window.addEventListener('blur', autoSaveCurrentState);
+  </script>
+</body>
+</html>
