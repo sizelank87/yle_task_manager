@@ -1471,6 +1471,21 @@ function toggleTaskDone(originalIndex) {
   }
 }
 function toggleEditor() {
+  const editor = document.getElementById('editorPanel');
+  const app = document.querySelector('.app');
+  const isOpen = editor.classList.toggle('open');
+
+  app.classList.toggle('editor-open', isOpen);
+
+  if (isOpen) {
+    closeDetailPanel();
+    document.querySelector('.logout-btn')?.classList.add('hide');
+  } else {
+    document.querySelector('.logout-btn')?.classList.remove('hide');
+  }
+
+  updateQuickSaveVisibility();
+}
 
     function changeMonth(delta) {
       calendarOffset += delta;
