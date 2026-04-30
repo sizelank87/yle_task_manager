@@ -134,9 +134,7 @@
       color: #cbd5e1;
     }
 
-    .calendar-date.muted {
-      opacity: 0.25;
-    }
+    .calendar-date.muted { opacity: 0.25; }
 
     .calendar-date.today {
       background: #2563eb;
@@ -146,9 +144,7 @@
     }
 
     .calendar-date.today.sun,
-    .calendar-date.today.sat {
-      color: #ffffff;
-    }
+    .calendar-date.today.sat { color: #ffffff; }
 
     .calendar-today-wrap {
       display: flex;
@@ -203,42 +199,6 @@
       white-space: nowrap;
     }
 
-    .export-area {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .export-btn {
-      background: linear-gradient(135deg, #facc15, #f59e0b);
-      color: #111827;
-      border: none;
-      border-radius: 999px;
-      padding: 6px 14px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.35);
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .export-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.5);
-      background: linear-gradient(135deg, #eab308, #d97706);
-    }
-
-    .save-warning {
-      font-size: 12px;
-      color: #f87171;
-      font-weight: 700;
-      text-align: center;
-    }
-
     .card {
       background: rgba(30, 41, 59, 0.95);
       border: 1px solid #334155;
@@ -274,9 +234,7 @@
       user-select: none;
     }
 
-    .sortable:hover {
-      color: #e2e8f0;
-    }
+    .sortable:hover { color: #e2e8f0; }
 
     .task-item {
       padding: 14px 16px;
@@ -296,9 +254,7 @@
       text-underline-offset: 4px;
     }
 
-    .task-name:hover {
-      color: #93c5fd;
-    }
+    .task-name:hover { color: #93c5fd; }
 
     .app.editor-open .task-name {
       cursor: default;
@@ -617,6 +573,52 @@
       margin-top: 4px;
     }
 
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .login-box {
+      width: 320px;
+      background: #1e293b;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    }
+
+    .login-box h2 {
+      color: white;
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .login-error {
+      color: #f87171;
+      margin-top: 10px;
+      min-height: 18px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .logout-btn {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 1200;
+      background: #334155;
+      color: white;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+
     @media (max-width: 1350px) {
       .display {
         width: calc(100% - 48px);
@@ -631,13 +633,9 @@
       }
 
       .editor,
-      .detail-panel {
-        width: min(420px, 100%);
-      }
+      .detail-panel { width: min(420px, 100%); }
 
-      .app.editor-open .display {
-        transform: none;
-      }
+      .app.editor-open .display { transform: none; }
     }
 
     @media (max-width: 800px) {
@@ -648,6 +646,18 @@
   </style>
 </head>
 <body>
+  <div id="loginScreen" class="login-screen">
+    <div class="login-box">
+      <h2>업무현황표 로그인</h2>
+      <input id="loginEmail" type="email" placeholder="이메일" autocomplete="email" />
+      <input id="loginPassword" type="password" placeholder="비밀번호" autocomplete="current-password" />
+      <button onclick="login()" class="primary" style="width:100%;">로그인</button>
+      <div id="loginError" class="login-error"></div>
+    </div>
+  </div>
+
+  <button class="logout-btn" onclick="logout()">로그아웃</button>
+
   <div class="app">
     <section class="display">
       <div class="calendar-side">
@@ -737,42 +747,85 @@
   </div>
 
   <script>
-  const SUPABASE_URL = 'https://voiqetgkbqkehizptcew.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXFldGdrYnFrZWhpenB0Y2V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNTM5NjMsImV4cCI6MjA5MjkyOTk2M30.Gw21IblZuQhlyFPzYxrzaqTlzPC2WjN0-pPMNmokr4M';
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  const BOARD_ID = 'main';
-    
-    async function saveToSupabase(data) {
-  const { error } = await supabaseClient
-    .from('status_board')
-    .upsert({
-      id: BOARD_ID,
-      data: data,
-      updated_at: new Date()
+    const SUPABASE_URL = 'https://voiqetgkbqkehizptcew.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXFldGdrYnFrZWhpenB0Y2V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNTM5NjMsImV4cCI6MjA5MjkyOTk2M30.Gw21IblZuQhlyFPzYxrzaqTlzPC2WjN0-pPMNmokr4M';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const BOARD_ID = 'main';
+
+    let appStarted = false;
+    let clockTimer = null;
+
+    async function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorBox = document.getElementById('loginError');
+      errorBox.textContent = '';
+
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        errorBox.textContent = '로그인 실패: 이메일 또는 비밀번호를 확인하세요.';
+        return;
+      }
+
+      document.getElementById('loginScreen').style.display = 'none';
+      initApp();
+    }
+
+    async function checkAuth() {
+      const { data } = await supabaseClient.auth.getSession();
+
+      if (data.session) {
+        document.getElementById('loginScreen').style.display = 'none';
+        initApp();
+      }
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') {
+        login();
+      }
     });
 
-  if (error) {
-    console.error('저장 실패:', error);
-  } else {
-    console.log('Supabase 저장 완료');
-  }
-}
+    async function saveToSupabase(data) {
+      const { error } = await supabaseClient
+        .from('status_board')
+        .upsert({
+          id: BOARD_ID,
+          data: data,
+          updated_at: new Date()
+        });
 
-async function loadFromSupabase() {
-  const { data, error } = await supabaseClient
-    .from('status_board')
-    .select('*')
-    .eq('id', BOARD_ID)
-    .single();
+      if (error) {
+        console.error('저장 실패:', error);
+      } else {
+        console.log('Supabase 저장 완료');
+      }
+    }
 
-  if (error) {
-    console.warn('불러오기 실패:', error);
-    return null;
-  }
+    async function loadFromSupabase() {
+      const { data, error } = await supabaseClient
+        .from('status_board')
+        .select('*')
+        .eq('id', BOARD_ID)
+        .single();
 
-  return data?.data || null;
-}
-    
+      if (error) {
+        console.warn('불러오기 실패:', error);
+        return null;
+      }
+
+      return data?.data || null;
+    }
+
     const TASK_COUNT = 10;
     let formCount = 3;
     let calendarOffset = 0;
@@ -813,10 +866,10 @@ async function loadFromSupabase() {
     function persistState(data) {
       try {
         const payload = JSON.stringify(data);
-    localStorage.setItem(STORAGE_KEY, payload);
-    localStorage.setItem(DRAFT_KEY, payload);
-    localStorage.setItem(STORAGE_META_KEY, JSON.stringify({ formCount, savedAt: Date.now() }));
-    saveToSupabase(data);
+        localStorage.setItem(STORAGE_KEY, payload);
+        localStorage.setItem(DRAFT_KEY, payload);
+        localStorage.setItem(STORAGE_META_KEY, JSON.stringify({ formCount, savedAt: Date.now() }));
+        saveToSupabase(data);
       } catch (e) {
         console.warn('저장 실패', e);
       }
@@ -824,10 +877,6 @@ async function loadFromSupabase() {
 
     function restoreMeta() {
       try {
-        if (window.__EXPORTED_META__ && typeof window.__EXPORTED_META__.formCount === 'number') {
-          formCount = Math.min(TASK_COUNT, Math.max(3, window.__EXPORTED_META__.formCount));
-          return;
-        }
         const raw = localStorage.getItem(STORAGE_META_KEY);
         if (!raw) return;
         const meta = JSON.parse(raw);
@@ -854,7 +903,6 @@ async function loadFromSupabase() {
 
     function getData() {
       try {
-        if (window.__EXPORTED_DATA__) return window.__EXPORTED_DATA__;
         const saved = localStorage.getItem(STORAGE_KEY);
         const draft = localStorage.getItem(DRAFT_KEY);
         const raw = draft || saved;
@@ -969,14 +1017,7 @@ async function loadFromSupabase() {
       const top = getCurrentTopFields();
       const tasks = getCurrentFormTasks();
       while (tasks.length < TASK_COUNT) {
-        tasks.push({
-          title: '',
-          startDate: '',
-          endDate: '',
-          owner: '',
-          priority: '보통',
-          description: ''
-        });
+        tasks.push({ title: '', startDate: '', endDate: '', owner: '', priority: '보통', description: '' });
       }
       return { ...top, tasks };
     }
@@ -984,9 +1025,7 @@ async function loadFromSupabase() {
     function autoSaveCurrentState() {
       const data = buildCurrentDataFromForm();
       persistState(data);
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } catch (e) {}
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
       renderBoard(data);
     }
 
@@ -1013,15 +1052,7 @@ async function loadFromSupabase() {
 
     function populateFormsFromTasks(tasks) {
       for (let i = 1; i <= formCount; i++) {
-        const task = tasks[i - 1] || {
-          title: '',
-          startDate: '',
-          endDate: '',
-          owner: '',
-          priority: '보통',
-          description: ''
-        };
-
+        const task = tasks[i - 1] || { title: '', startDate: '', endDate: '', owner: '', priority: '보통', description: '' };
         document.getElementById(`task${i}Title`).value = task.title || '';
         document.getElementById(`task${i}Start`).value = task.startDate || '';
         document.getElementById(`task${i}End`).value = task.endDate || '';
@@ -1080,19 +1111,15 @@ async function loadFromSupabase() {
 
     function getAutoStatus(startDate, endDate) {
       if (!startDate && !endDate) return '기간 미설정';
-
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const start = parseLocalDate(startDate);
       const end = parseLocalDate(endDate);
-
       if (start && today < start) return '예정중';
-
       if (end) {
         const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
         if (diffDays <= 2) return '마감임박';
       }
-
       return '진행 중';
     }
 
@@ -1139,19 +1166,11 @@ async function loadFromSupabase() {
     function refreshDetailPanel(data) {
       const panel = document.getElementById('detailPanel');
       if (!panel) return;
-
-      const tasks = normalizeTasks(data.tasks).map((task, index) => ({
-        ...task,
-        originalIndex: index + 1,
-        status: getAutoStatus(task.startDate, task.endDate)
-      }));
-
+      const tasks = normalizeTasks(data.tasks).map((task, index) => ({ ...task, originalIndex: index + 1, status: getAutoStatus(task.startDate, task.endDate) }));
       const selected = tasks.find(task => task.originalIndex === selectedTaskId && task.title.trim() !== '');
 
       if (!selected) {
-        if (!document.querySelector('.app').classList.contains('editor-open')) {
-          panel.classList.remove('open');
-        }
+        if (!document.querySelector('.app').classList.contains('editor-open')) panel.classList.remove('open');
         document.getElementById('detailTitle').textContent = '업무 내용을 선택하세요';
         document.getElementById('detailStatus').textContent = '-';
         document.getElementById('detailPriority').textContent = '-';
@@ -1181,11 +1200,7 @@ async function loadFromSupabase() {
       taskList.innerHTML = '';
 
       const visibleTasks = normalizeTasks(data.tasks)
-        .map((task, index) => ({
-          ...task,
-          originalIndex: index + 1,
-          status: getAutoStatus(task.startDate, task.endDate)
-        }))
+        .map((task, index) => ({ ...task, originalIndex: index + 1, status: getAutoStatus(task.startDate, task.endDate) }))
         .filter(task => task.title.trim() !== '');
 
       visibleTasks.sort((a, b) => {
@@ -1233,13 +1248,11 @@ async function loadFromSupabase() {
       const topActions = document.getElementById('editorTopActions');
       const quickSaveFab = document.getElementById('quickSaveFab');
       if (!editor || !topActions || !quickSaveFab) return;
-
       const editorOpen = editor.classList.contains('open');
       if (!editorOpen) {
         quickSaveFab.classList.remove('show');
         return;
       }
-
       const rect = topActions.getBoundingClientRect();
       const isVisible = rect.bottom > 0 && rect.top < window.innerHeight;
       quickSaveFab.classList.toggle('show', !isVisible);
@@ -1248,17 +1261,12 @@ async function loadFromSupabase() {
     function loadToForm() {
       const data = getData();
       const tasks = normalizeTasks(data.tasks);
-
-      const filledCount = tasks.filter(task =>
-        task.title || task.startDate || task.endDate || task.owner || task.description
-      ).length;
-
+      const filledCount = tasks.filter(task => task.title || task.startDate || task.endDate || task.owner || task.description).length;
       const neededCount = Math.min(TASK_COUNT, Math.max(3, formCount, filledCount));
       if (formCount !== neededCount) {
         formCount = neededCount;
         createTaskForms();
       }
-
       document.getElementById('inputTitle').value = data.title || '';
       document.getElementById('inputNotice').value = data.notice || '';
       document.getElementById('inputFooter').value = data.footer || '';
@@ -1270,13 +1278,10 @@ async function loadFromSupabase() {
     function saveAndClose() {
       const data = buildCurrentDataFromForm();
       persistState(data);
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      } catch (e) {}
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
       renderBoard(data);
       toggleEditor();
     }
-
 
     function toggleEditor() {
       const editor = document.getElementById('editorPanel');
@@ -1304,16 +1309,13 @@ async function loadFromSupabase() {
       const month = viewDate.getMonth();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
       const firstDayRaw = new Date(year, month, 1).getDay();
       const firstDay = (firstDayRaw + 6) % 7;
       const lastDate = new Date(year, month + 1, 0).getDate();
       document.getElementById('calendarTitle').textContent = `${year}년 ${month + 1}월`;
-
       const dayNames = ['월', '화', '수', '목', '금', '토', '일'];
       const grid = document.getElementById('calendarGrid');
       grid.innerHTML = '';
-
       dayNames.forEach((name, index) => {
         const el = document.createElement('div');
         el.className = 'calendar-day-name';
@@ -1322,31 +1324,21 @@ async function loadFromSupabase() {
         el.textContent = name;
         grid.appendChild(el);
       });
-
       for (let i = 0; i < firstDay; i++) {
         const empty = document.createElement('div');
         empty.className = 'calendar-date muted';
-        empty.textContent = '';
         grid.appendChild(empty);
       }
-
       for (let day = 1; day <= lastDate; day++) {
         const el = document.createElement('div');
         el.className = 'calendar-date';
         const cellDate = new Date(year, month, day);
         const weekday = cellDate.getDay();
-
         if (weekday === 0) el.classList.add('sun');
         if (weekday === 6) el.classList.add('sat');
-
-        if (
-          cellDate.getFullYear() === today.getFullYear() &&
-          cellDate.getMonth() === today.getMonth() &&
-          cellDate.getDate() === today.getDate()
-        ) {
+        if (cellDate.getFullYear() === today.getFullYear() && cellDate.getMonth() === today.getMonth() && cellDate.getDate() === today.getDate()) {
           el.classList.add('today');
         }
-
         el.textContent = day;
         grid.appendChild(el);
       }
@@ -1354,20 +1346,42 @@ async function loadFromSupabase() {
 
     function updateClock() {
       const now = new Date();
-      const time = now.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-
+      const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
       const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
       const todayText = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${dayNames[now.getDay()]}요일`;
       document.getElementById('clock').textContent = time;
       document.getElementById('todayDate').textContent = todayText;
-
-      
-
       renderCalendar();
+    }
+
+    function initApp() {
+      if (appStarted) return;
+      appStarted = true;
+
+      restoreSessionIfNeeded();
+      restoreMeta();
+      createTaskForms();
+
+      (async () => {
+        const dbData = await loadFromSupabase();
+        if (dbData) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(dbData));
+          localStorage.setItem(DRAFT_KEY, JSON.stringify(dbData));
+        }
+        loadToForm();
+      })();
+
+      updateClock();
+      clockTimer = setInterval(updateClock, 1000);
+
+      document.getElementById('editorPanel').addEventListener('scroll', updateQuickSaveVisibility);
+      window.addEventListener('resize', updateQuickSaveVisibility);
+      window.addEventListener('beforeunload', autoSaveCurrentState);
+      window.addEventListener('pagehide', autoSaveCurrentState);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') autoSaveCurrentState();
+      });
+      window.addEventListener('blur', autoSaveCurrentState);
     }
 
     document.addEventListener('click', (e) => {
@@ -1383,30 +1397,7 @@ async function loadFromSupabase() {
     });
 
     document.title = getFileNameTitle();
-
-    restoreSessionIfNeeded();
-    restoreMeta();
-    createTaskForms();
-   (async () => {
-  const dbData = await loadFromSupabase();
-
-  if (dbData) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dbData));
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(dbData));
-  }
-
-  loadToForm();
-})();
-    updateClock();
-    setInterval(updateClock, 1000);
-    document.getElementById('editorPanel').addEventListener('scroll', updateQuickSaveVisibility);
-    window.addEventListener('resize', updateQuickSaveVisibility);
-    window.addEventListener('beforeunload', autoSaveCurrentState);
-    window.addEventListener('pagehide', autoSaveCurrentState);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') autoSaveCurrentState();
-    });
-    window.addEventListener('blur', autoSaveCurrentState);
+    checkAuth();
   </script>
 </body>
 </html>
