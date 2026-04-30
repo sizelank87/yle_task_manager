@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>업무현황표</title>
@@ -742,6 +743,42 @@
   </div>
 
   <script>
+  const SUPABASE_URL = 'https://voiqetgkbqkehizptcew.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvaXFldGdrYnFrZWhpenB0Y2V3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNTM5NjMsImV4cCI6MjA5MjkyOTk2M30.Gw21IblZuQhlyFPzYxrzaqTlzPC2WjN0-pPMNmokr4M';
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const BOARD_ID = 'main';
+    
+    async function saveToSupabase(data) {
+  const { error } = await supabaseClient
+    .from('status_board')
+    .upsert({
+      id: BOARD_ID,
+      data: data,
+      updated_at: new Date()
+    });
+
+  if (error) {
+    console.error('저장 실패:', error);
+  } else {
+    console.log('Supabase 저장 완료');
+  }
+}
+
+async function loadFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from('status_board')
+    .select('*')
+    .eq('id', BOARD_ID)
+    .single();
+
+  if (error) {
+    console.warn('불러오기 실패:', error);
+    return null;
+  }
+
+  return data?.data || null;
+}
+    
     const TASK_COUNT = 10;
     let formCount = 3;
     let calendarOffset = 0;
@@ -782,9 +819,10 @@
     function persistState(data) {
       try {
         const payload = JSON.stringify(data);
-        localStorage.setItem(STORAGE_KEY, payload);
-        localStorage.setItem(DRAFT_KEY, payload);
-        localStorage.setItem(STORAGE_META_KEY, JSON.stringify({ formCount, savedAt: Date.now() }));
+    localStorage.setItem(STORAGE_KEY, payload);
+    localStorage.setItem(DRAFT_KEY, payload);
+    localStorage.setItem(STORAGE_META_KEY, JSON.stringify({ formCount, savedAt: Date.now() }));
+    saveToSupabase(data);
       } catch (e) {
         console.warn('저장 실패', e);
       }
@@ -1402,7 +1440,16 @@
     restoreSessionIfNeeded();
     restoreMeta();
     createTaskForms();
-    loadToForm();
+   (async () => {
+  const dbData = await loadFromSupabase();
+
+  if (dbData) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dbData));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(dbData));
+  }
+
+  loadToForm();
+})();
     updateClock();
     setInterval(updateClock, 1000);
     document.getElementById('editorPanel').addEventListener('scroll', updateQuickSaveVisibility);
