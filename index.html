@@ -791,7 +791,8 @@
           <div class="save-status" id="saveStatus"></div>
         </div>
       </div>
-
+      
+ <div class="notice" id="noticeBox"></div>
       <div class="card">
         <h2>주요 업무</h2>
         <div class="mobile-sort-row">
@@ -808,7 +809,6 @@
         <div id="taskList"></div>
       </div>
 
-      <div class="notice" id="noticeBox"></div>
       <div class="footer" id="footerText"></div>
     </section>
 
@@ -836,30 +836,33 @@
         <button class="primary" onclick="saveAndClose()">변경 후 닫기</button>
       </div>
 
-      <h2>상태창 편집</h2>
-      <p class="help">오른쪽에서 수정하고 저장하면 왼쪽 상태창이 바로 바뀝니다. 주요 업무는 최대 10개까지 입력할 수 있습니다.</p>
+ <h2>상태창 편집</h2>
+<p class="help">오른쪽에서 수정하고 저장하면 왼쪽 상태창이 바로 바뀝니다. 주요 업무는 최대 10개까지 입력할 수 있습니다.</p>
 
-      <div class="section">
-        <div class="section-title">기본 정보</div>
-        <label for="inputTitle">화면 제목</label>
-        <input id="inputTitle" type="text" />
-      </div>
+<div class="section">
+  <div class="section-title">공지</div>
+  <label for="inputNotice">공지</label>
+  <textarea id="inputNotice"></textarea>
+</div>
 
-      <div class="section">
-        <div class="section-title">주요 업무 입력 (최대 10개)</div>
-        <div id="taskForms"></div>
-      </div>
+<div class="section">
+  <div class="section-title">기본 정보</div>
+  <label for="inputTitle">화면 제목</label>
+  <input id="inputTitle" type="text" />
+</div>
 
-      <div class="section">
-        <div class="section-title">공지와 하단 문구</div>
-        <label for="inputNotice">공지</label>
-        <textarea id="inputNotice"></textarea>
-        <label for="inputFooter">하단 문구</label>
-        <input id="inputFooter" type="text" />
-      </div>
+<div class="section">
+  <div class="section-title">주요 업무 입력 (최대 10개)</div>
+  <div id="taskForms"></div>
+</div>
 
-      <div class="status-note">상태는 자동 계산됩니다: 기간 미설정(오렌지), 예정중(초록), 진행 중(노랑), 마감임박(빨강). 중요도는 최우선 / 우선 / 보통으로 설정됩니다.</div>
-    </aside>
+<div class="section">
+  <div class="section-title">하단 문구</div>
+  <label for="inputFooter">하단 문구</label>
+  <input id="inputFooter" type="text" />
+</div>
+
+     
   </div>
 
   <script>
