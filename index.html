@@ -943,7 +943,7 @@
     }
 
     const TASK_COUNT = 10;
-    let formCount = 3;
+    let formCount = 0;
     let calendarOffset = 0;
     let selectedTaskId = null;
     let sortState = { key: 'startDate', direction: 'asc' };
@@ -997,7 +997,7 @@
         if (!raw) return;
         const meta = JSON.parse(raw);
         if (typeof meta.formCount === 'number') {
-          formCount = Math.min(TASK_COUNT, Math.max(3, meta.formCount));
+         formCount = Math.min(TASK_COUNT, Math.max(0, meta.formCount));
         }
       } catch (e) {
         console.warn('복원 메타 읽기 실패', e);
@@ -1051,7 +1051,13 @@ function getData() {
     function createTaskForms() {
       const container = document.getElementById('taskForms');
       container.innerHTML = '';
-
+if (formCount === 0) {
+  container.innerHTML = `
+    <div style="text-align:center; color:#94a3b8; padding:20px;">
+      업무가 없습니다. "업무 추가" 버튼을 눌러 시작하세요.
+    </div>
+  `;
+}
       for (let i = 1; i <= formCount; i++) {
         const block = document.createElement('div');
         block.className = 'task-form';
@@ -1214,10 +1220,10 @@ function autoSaveCurrentState() {
     }
 
     function deleteTask(index) {
-      if (index < 4) return;
+     // if (index < 4) return;
       const tasks = getCurrentFormTasks();
       tasks.splice(index - 1, 1);
-      if (formCount > 3) formCount--;
+     if (formCount > 0) formCount--;
       createTaskForms();
       populateFormsFromTasks(tasks);
       autoSaveCurrentState();
@@ -1414,7 +1420,7 @@ function autoSaveCurrentState() {
       const data = getData();
       const tasks = normalizeTasks(data.tasks);
       const filledCount = tasks.filter(task => task.title || task.startDate || task.endDate || task.owner || task.description).length;
-      const neededCount = Math.min(TASK_COUNT, Math.max(3, formCount, filledCount));
+     const neededCount = Math.min(TASK_COUNT, Math.max(0, formCount, filledCount));
       if (formCount !== neededCount) {
         formCount = neededCount;
         createTaskForms();
